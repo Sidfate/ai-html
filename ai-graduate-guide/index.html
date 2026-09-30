@@ -202,12 +202,12 @@ const noteTip=$('metric-tooltip');let noteOwner=null, noteTimer;
 function hideNote(){clearTimeout(noteTimer);if(noteOwner){noteOwner.setAttribute('aria-expanded','false');noteOwner.removeAttribute('aria-describedby');}noteOwner=null;if(noteTip.matches(':popover-open'))noteTip.hidePopover();noteTip.hidden=true;}
 function showNote(button){clearTimeout(noteTimer);if(noteOwner&&noteOwner!==button)hideNote();noteOwner=button;noteTip.textContent=button.dataset.note;noteTip.hidden=false;if(noteTip.showPopover&&!noteTip.matches(':popover-open'))noteTip.showPopover();button.setAttribute('aria-describedby','metric-tooltip');button.setAttribute('aria-expanded','true');const r=button.getBoundingClientRect(),w=noteTip.offsetWidth,h=noteTip.offsetHeight;noteTip.style.left=Math.max(10,Math.min(r.left,innerWidth-w-10))+'px';noteTip.style.top=Math.max(10,r.bottom+h+12<innerHeight?r.bottom+8:r.top-h-8)+'px';}
 document.addEventListener('pointerover',e=>{const b=e.target.closest('.note-button');if(b)showNote(b);if(e.target.closest('#metric-tooltip'))clearTimeout(noteTimer);});
-document.addEventListener('pointerout',e=>{if(e.target.closest('.note-button,#metric-tooltip')&&!e.relatedTarget?.closest?.('.note-button,#metric-tooltip'))noteTimer=setTimeout(hideNote,120);});
+document.addEventListener('pointerout',e=>{if(e.target.closest('.note-button,#metric-tooltip')&&!e.relatedTarget?.closest?.('.note-button,#metric-tooltip'))noteTimer=setTimeout(()=>{if(document.activeElement!==noteOwner)hideNote();},120);});
 document.addEventListener('focusin',e=>{if(e.target.matches('.note-button'))showNote(e.target);});
 document.addEventListener('focusout',e=>{if(e.target.matches('.note-button'))hideNote();});
 document.addEventListener('click',e=>{const b=e.target.closest('.note-button');if(b)showNote(b);else if(!e.target.closest('#metric-tooltip'))hideNote();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&noteOwner){hideNote();e.preventDefault();e.stopPropagation();}},true);
-window.addEventListener('scroll',hideNote,true);window.addEventListener('resize',hideNote);
+window.addEventListener('scroll',e=>{if(noteOwner&&e.target!==noteTip)showNote(noteOwner);},true);window.addEventListener('resize',hideNote);
 $('weight-controls').innerHTML=dimensions.map(d=>`<label class="weight-field"><span>${d.name}<b id="w-label-${d.key}"></b></span><input id="w-${d.key}" type="range" min="0" max="50" step="5" value="${weights[d.key]}" aria-label="${d.name}权重"></label>`).join('');
 for(const d of dimensions)$('w-'+d.key).addEventListener('input',()=>{const next=Number($('w-'+d.key).value);if(totalWeight()-weights[d.key]+next===0){toast('请至少保留一项非零权重。');$('w-'+d.key).value=weights[d.key];return;}weights[d.key]=next;profile='custom';weightUI();render();});
 $('profile').addEventListener('change',()=>{profile=$('profile').value;if(profile==='custom')$('weight-settings').open=true;if(presets[profile])weights={...presets[profile]};weightUI();render();});
